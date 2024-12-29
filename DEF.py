@@ -1,7 +1,7 @@
 import time
 import os.path
 
-def Menu_initial():
+def homeMenu():
     while True:
         print("\nMenu do Gerenciador de Tarefas: ")
         print("1. Adicionar Tarefa")
@@ -14,13 +14,13 @@ def Menu_initial():
             number_choice = int(input("Digite sua escolha: "))
             match number_choice:
                 case 1:
-                    Add_Tarefa()
+                    addTask()
                 case 2:
-                    viewTarefas()
+                    viewTask()
                 case 3:
-                    updateTarefa()
+                    taskUpdate()
                 case 4:
-                    completTarefa()
+                    completeTask()
                 case 5:
                     deleteTarefa()
                 case 6:
@@ -35,15 +35,15 @@ def Menu_initial():
             print("\nPrograma encerrado.")
             exit()
 
-def Add_Tarefa():
+def addTask():
     with open("tarefas.txt", "a") as arquivo_txt:
         tarefa = input("Digite a tarefa: ")
         arquivo_txt.write("[ ] "+tarefa+"\n")
     print(f"Tarefa adicionada: {tarefa}")
     
 
-def viewTarefas():
-    validationWrite()
+def viewTask():
+    writeValidation()
     print("\n-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
     cont = 1
     with open("tarefas.txt", "r") as text_txt:           
@@ -53,29 +53,20 @@ def viewTarefas():
     print("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
 
 
-def updateTarefa():
-    validationWrite()
-    while True:
-        try:
-            with open("tarefas.txt", "r") as arquivo_txt:
-                arquivoLIDO = arquivo_txt.readlines()
-                tam_txt = len(arquivoLIDO)
-            viewTarefas()
-            tarefa_num = int(input("Escolha o nº da Tarefa: "))
-            tarefa_num -= 1
-            if tarefa_num < 0 or tarefa_num >= tam_txt:
-                print("Número da tarefa Inexistente")
-                return updateTarefa()
-            break
-        except ValueError:
-            print(f"{ValueError} Insira apenas números.")
+def taskUpdate():
+    writeValidation()
+    
+    tarefa_num = numberValidation("tarefas.txt", "Escolha o nº da Tarefa: ")
+
+    if tarefa_num is None:
+        return
 
     novoTexto = str(input("Escreva a nova Tarefa: "))
 
     with open("tarefas.txt", "r") as arquivo_txt:
         arquivoLido = arquivo_txt.readlines()
 
-    arquivoLido[tarefa_num] = "[ ] "+novoTexto+"\n"
+    arquivoLido[tarefa_num-1] = "[ ] "+novoTexto+"\n"
 
     with open("tarefas.txt", "w") as arquivo2_txt:
         arquivo2_txt.writelines(arquivoLido)
@@ -83,23 +74,15 @@ def updateTarefa():
 
 
 
-def completTarefa():
-    validationWrite()
-    viewTarefas()
-    
+def completeTask():
+    writeValidation()    
+
+    tarefa_num = numberValidation("tarefas.txt", "Escreva o número da tarefa que deseja marcar como completada: ")
+    if tarefa_num is None:
+        return
+
     with open("tarefas.txt", "r") as arquivo_txt:
         arquivoLido = arquivo_txt.readlines()
-    while True:
-            try:    
-                tarefa_num = int(input("Escreva o número da tarefa que deseja marcar como completada: "))
-                if tarefa_num < 1 or tarefa_num > len(arquivoLido):
-                    print("Número da tarefa inexistente. Tente novamente.")
-                    viewTarefas()
-                    continue
-                break
-            except ValueError:
-                print("Por favor, insira apenas números.")   
-
     copiaArquivo_lido = arquivoLido[tarefa_num-1]     
     arquivoLido[tarefa_num-1] = "[✓] "+copiaArquivo_lido[4:]
 
@@ -110,17 +93,11 @@ def completTarefa():
 
 
 def deleteTarefa():
-    validationWrite()
+    writeValidation()
 
     with open("tarefas.txt", "r") as arquivo_txt:
         arquivo_lido = arquivo_txt.readlines() 
     tarefas_nao_concluidas = [linha for linha in arquivo_lido if "[✓]" not in linha]
-
-    """for linhas in arquivo_lido:
-            print(linhas.find("✓"))
-            if linhas.find("✓"):
-                del arquivo_lido[number_linha]
-            number_linha +=1"""
             
     with open("tarefas.txt", "w") as arquivo2_txt:
         arquivo2_txt.writelines(tarefas_nao_concluidas)
@@ -128,30 +105,36 @@ def deleteTarefa():
 
 
     
-def validationWrite():
+def writeValidation():
     if not os.path.exists("tarefas.txt"):
         print("Nenhuma tarefa existente ainda, adicione para poder vizualizar.")
-        return Menu_initial()
+        return homeMenu()
 
     with open("tarefas.txt", "r") as arquivo_txt:
         arquivo_lido = arquivo_txt.readlines()
         tam_txt = len(arquivo_lido)
         if  tam_txt == 0:
             print("Não há tarefas cadastradas.\n")
-            return Menu_initial()
+            return homeMenu()
 
 
-def validationNumber():
-    with open("tarefas.txt", "r") as arquivo_txt:
-        arquivoLido = arquivo_txt.readlines()
+def numberValidation(arquivo, mensagem):
+
+    with open(arquivo, "r") as arquivo_txt:
+        tarefas = arquivo_txt.readlines()
+        max_tarefas = len(tarefas)
+    
+    if max_tarefas == 0:
+        print("Não há tarefas cadastradas.")
+        return None 
+
     while True:
-            try:    
-                tarefa_num = int(input("Escolha o nº da tarefa: "))
-                if tarefa_num < 1 or tarefa_num > len(arquivoLido):
-                    print("Número da tarefa inexistente. Tente novamente.")
-                    viewTarefas()
-                    continue
-                break
-            except ValueError:
-                print("Por favor, insira apenas números.") 
-    return arquivoLido
+        try:
+            viewTask()
+            tarefa_num = int(input(mensagem))
+            if tarefa_num < 1 or tarefa_num > max_tarefas:
+                print(f"Número da tarefa inexistente. Escolha entre 1 e {max_tarefas}.")
+                continue
+            return tarefa_num
+        except ValueError:
+            print("Por favor, insira apenas números.")
